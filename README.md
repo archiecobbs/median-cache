@@ -43,7 +43,7 @@ When there is an addition or removal, we update these statistics.
 
 First note that updating `dupLo` and `dupHi` may require iterating through an arbitrarily large number of duplicate values.
 
-To see why, suppose we didn't keep track of `dupLo` and `dupHi`, and were tracking the following data set:
+To see why, suppose we didn't keep track of `dupLo` and `dupHi`, and were tracking a data set where the middle half of values were all the same:
 ```
                                          lo  hi
     ┏━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┓
@@ -51,7 +51,7 @@ To see why, suppose we didn't keep track of `dupLo` and `dupHi`, and were tracki
     ┗━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┛
       00  01  02  03  04  05  06  07  08  09  10  11  12  13  14  15  16  17  18  19
 ```
-Now suppose we remove a `2` from the data set. To confirm that the new `lo` is `2` and not `1`, we would have to iterate through at least four `1`'s or four `2`'s, and do a similar iteration to confirm the new `hi` is `2` and not `3`.
+Now suppose we remove a `2` from the data set. To confirm that the new `lo` is `2` and not `1`, we would have to iterate through at least four `1`'s or ten `2`'s, and do a similar iteration to confirm the new `hi` is `2` and not `3`.
 
 So `dupLo` and `dupHi` just provide a first layer of protection against large duplicate scans, by remembering the results of the last scan performed in each direction.
 
