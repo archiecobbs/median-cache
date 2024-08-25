@@ -57,7 +57,7 @@ So `dupLo` and `dupHi` just provide a first layer of protection against large du
 
 This algorithm is **not** constant time, but it should be close to it, on average, in most cases, especially if there are not a lot of duplicates.
 
-It could be made officially constant time by keeping another table of **unique** values along with their multiplicities, in effect doing the aforementioned "remembering" for every value.
+It could be made officially constant time by keeping another table of **unique** values along with their multiplicities, in effect doing the aforementioned "remembering" for every value. Actually, it would be O(log(N)) time if you count the time it takes to initiate a forward or reverse iteration.
 
 **Demo**
 
