@@ -1,51 +1,52 @@
 # median-cache
 
-This project is a simple demonstration of one answer to the following question:
+This project is an answer to the following question:
 
-**Scenario**: You are maintaining a very large database that includes numerical values. For example, it might be a database of home sale prices. The data set is being constantly updated with additions and removals. You want to be able to efficiently determine the median value at any point in time.
+**Scenario**: You are maintaining a very large database that includes numerical values. For example, it might be a database of home sale prices. The data set is being continually updated with additions and removals. You want to be able to efficiently determine the median value at any point in time.
 
-You have defined an index on the data column that sorts by numerical value. So you can efficiently search for any value, and iterate starting from any value in the forward or reverse direction, but you can't (for example) efficiently calculate a value's index in the sorted list, or efficiently jump to an index in the sorted list, or even calcluate the size of the list.
+You can assume there is a sorted index on the column of numerical values. So you can efficiently search for any value and iterate consecutive values starting from any value in the forward or reverse direction, but the data set is too large to efficiently calculate a value's index in the sorted list, jump to an particular index in the sorted list, or count the size of the list.
 
-As a result, the straightforward algorithm of retrieving the value(s) at the exact midpoint in that ordering is not a practical solution.
+As a result, the straightforward algorithm of building a list of all of the values and retrieving the value(s) in the middle of the list is impractical.
 
-**Question**: Is there a small amount of additional data that you could maintain, updating with each addition or removal, that would allow you to compute the median in constant time?
+**Question**: Is there a small amount of additional data that you could maintain that would allow you to, at any time, peform either of the following two operations efficiently?
 
-**Answer**: Almost. Here's an overview.
+* Update the median after an addition or removal
+* Compute the median
 
-First, review the definition of median value. Given a sorted list of values:
+**Answer**: Yes
+
+First, let's define "efficiently". We will be relying on the ability to iterate values in order from any starting point. Initiating such an operation typically takes O(log(n)) time because we have to search into a balanced tree. Also, adding or removing values requires time O(log(n)) to update the column index for the same reason. So the best we can expect to do is O(log(n)) time and that will be our standard for "efficient".
+
+First, let's review the definition of **median value**. Given a sorted list of values:
 
 * If there are zero values, the median is undefined
 * If there are an odd number of values, the median is the value in the middle of the list
 * If there are an even number of values, the median is the average of the two values in the middle of the list
 
-We define the "first half" and "second half" of the list as follows:
+Now define the **first half** and **second half** of a list as follows:
 
 * If the number of values is even, then use the usual/obvious definition of first and second half
-* If the number of values is odd, then consider the two halves to overlap by one, so they both include the middle value
+* If the number of values is odd, then consider the two halves to overlap on that one value, so both halves include the middle value
 
-So another definition of the median is as the average of:
+So another definition of the median is the average of:
 * The last (i.e., highest) value in the first half, and
 * The first (i.e., lowest) value in the second half.
 
-Let's call these values `lo` and `hi` (respectively). When the number of values is odd, these are the same value.
+Let's call these values `lo` and `hi` (respectively). When the number of values is odd, these are the same value. The above definition has the property that it works for both odd and even sized lists.
 
-This algorithm keeps track of the following statistics:
+Our algorithm will keep track of the following statistics as the "additional data":
 
 * The total number of values
-* The last value in the first half (call this `lo`)
-* The first value in the second half (call this`hi`)
-* The number of duplicates of `lo` that precede it in the first half (call this `dupLo`)
-* The number of duplicates of `hi` that follow it in the second half (call this `dupHi`)
+* The last value in the first half (i.e., `lo`)
+* The first value in the second half (i.e., `hi`)
 
 When there is an addition or removal, we update these statistics.
 
 **Performance**
 
-Let's get this out of the way first: We are relying on the ability to iterate values in order from any starting point. Initiating such an operation typically takes O(log(n)) time because we have to search into a balanced tree. For this analysis, we are factoring out that search time. So at the end of the day, you would need to multiply all of this analysis by log(n) for it to be accurate.
+First, let's assume there are no duplicate values. Then updating `lo` and `hi` after an insertion or removal is easy: just determine which half of the list contains the affected value and update `lo` and `hi` accordingly, which at worst requires just finding its next-door neighbor, which we can do in O(log(n)) time.
 
-First we note that updating `dupLo` and `dupHi` may require iterating through an arbitrarily large number of duplicate values.
-
-To see why, suppose we didn't keep track of `dupLo` and `dupHi`, and were tracking a data set where the middle half of values were all the same:
+What if there are duplicates? Suppose we are tracking a data set where the middle half of the values were all the same:
 ```
                                          lo  hi
     ┏━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┳━━━┓
@@ -53,13 +54,7 @@ To see why, suppose we didn't keep track of `dupLo` and `dupHi`, and were tracki
     ┗━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┛
       00  01  02  03  04  05  06  07  08  09  10  11  12  13  14  15  16  17  18  19
 ```
-Now suppose we remove a `2` from the data set. To confirm that the new `lo` is `2` and not `1`, we would have to iterate through at least four `1`'s or ten `2`'s, and do a similar iteration to confirm the new `hi` is `2` and not `3`. Either way, we're looking at an O(n) operation.
-
-So `dupLo` and `dupHi` just provide a first layer of protection against large duplicate scans, by remembering the results of the last scan performed in each direction. When no duplicate scan is needed, then each operation is constant time.
-
-We could make **every** operation constant time by keeping another table of **unique** values along with their multiplicities, in effect doing the aforementioned remembering of the number of duplicates for every value.
-
-For example, there could be two database tables `SALES` and `SALE_PRICES`, where `SALE_PRICES` had a _unique_ index on the `PRICE` column and also a `NUM_DUPS` column, and each row of `SALES` had a foreign key referring to `SALE_PRICES`.
+Now suppose we remove a `2` from the data set. `lo` and `hi` are currently both `2` and now we need to update them. The only efficient access we have into the list of values is to iterate forward or backward starting from some particular value; and the only possible starting points for any such iteration are `00`, `04`, `05`, `14`, `15`, and `19`. To prove that `lo` is still `2`, i.e., there is at least one `2` in the first half of the list, we would have to iterate through at least five `1`'s or ten `2`'s. Those are both O(n) operations.
 
 Another observation is that when there are duplicates, the pattern of additions and removals matters. Consider this data set:
 ```
@@ -69,11 +64,24 @@ Another observation is that when there are duplicates, the pattern of additions 
     ┗━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┻━━━┛
       00  01  02  03  04  05  06  07  08  09  10  11  12  13  14  15  16  17  18
 ```
-Now suppose we repeatedly add and remove `2`. Then each operation will require a scan of half of the data set.
+Now suppose we repeatedly add and remove `2`. Then _every_ operation would require a scan of half of the data set.
 
-At the opposite extreme, if we only did additions, or only removals, then even without keeping track of duplicates the running time is amoritzed constant time, because each duplicate value is scanned at most once.
+We can try to handle the problem of duplicates by also tracking the following information:
 
-So the bottom line is that for guaranteed constant time performance in the face of additions and removals, you'd need to either not have duplicates, or else put all the unique values in a separate table where the number of duplicates for any value could be calculated in constant time.
+* The number of duplicates of `lo` that precede it in the first half (call this `dupLo`)
+* The number of duplicates of `hi` that follow it in the second half (call this `dupHi`)
+
+In other words, we remember the results of the last duplicate scan performed in each direction. But when `dupLo` or `dupHi` are zero, we may have to do a new scan. So tracking `dupLo` and `dupHi` provides a first layer of defense against large duplicate scans, but the original problem still exists once you get to the next value, and so we still have O(n) performance.
+
+On the other hand, if we could assume there are no duplicate values, then we don't need to track `dupLo` or `dupHi` and every operation is O(log(n)) time.
+
+There is a simple way to elimimate duplicate values: create a new table of **unique** values, along with their multiplicities. In other words we are keeping track of the number of duplicates of **every** value.
+
+For example, there could be two database tables `HOME_SALES` and `SALE_PRICES`, where `SALE_PRICES` had a _unique_ index on the `PRICE` column and also a `NUM_DUPS` column. Then the `HOME_SALES` table would not have a `PRICE` column, but instead would have a foreign key into `SALE_PRICES`. Maintaining this new table only requires O(log(n)) time per addition or removal in `HOME_SALES`.
+
+So the bottom line is that for guaranteed O(log(n)) time performance in the face of additions and removals, you'd need to either assume there are no duplicates, or else maintain a separate table of unique values.
+
+The sample code here includes the `dupLo` and `dupHi` trick. If there are no duplicates, it has guaranteed O(log(n)) performance, and if there are duplicates, at least you have a first layer of defense against bad performance.
 
 **Demo**
 
