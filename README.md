@@ -83,6 +83,10 @@ So the bottom line is that for guaranteed O(log(n)) time performance in the face
 
 The sample code here includes the `dupLo` and `dupHi` trick. If there are no duplicates, it has guaranteed O(log(n)) performance, and if there are duplicates, at least you have a first layer of defense against bad performance.
 
+**Javadoc**
+
+Click [HERE](https://archiecobbs.github.io/median-cache/javadoc/index.html)
+
 **Demo**
 
 To run the demo/test program:
