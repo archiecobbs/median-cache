@@ -85,7 +85,7 @@ The sample code here includes the `dupLo` and `dupHi` trick. If there are no dup
 
 **Javadoc**
 
-Click [HERE](https://archiecobbs.github.io/median-cache/javadoc/index.html)
+Click [HERE](https://archiecobbs.github.io/median-cache/javadoc/index.html).
 
 **Demo**
 
