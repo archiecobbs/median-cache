@@ -78,8 +78,7 @@ public class MedianTest {
                     assert this.values[i] >= this.values[i - 1];
             }
             if (this.size == 0) {
-                assert state.lo() == 0;
-                assert state.hi() == 0;
+                assert state.size() == 0;
                 assert state.dupLo() == 0;
                 assert state.dupLo() == 0;
             } else {

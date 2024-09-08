@@ -55,7 +55,7 @@ public class MedianState {
      * Get the current median.
      *
      * @return current median
-     * @throws IllegalStateException if no data has been added
+     * @throws IllegalStateException if there is no data
      */
     public double median() {
         if (this.count == 0)
@@ -152,17 +152,20 @@ public class MedianState {
      * If the given value is not actually present in the data set, then the behavior is undefined.
      *
      * @param value old value
+     * @throws IllegalStateException if there is no data
      * @throws IllegalArgumentException if {@code value} is not finite
      */
     public void afterRemove(double value) {
 
         // Update median state
+        if (this.count == 0)
+            throw new IllegalStateException("no data");
         if (this.count == 1) {
             this.lo = 0.0;
             this.hi = 0.0;
             assert this.dupLo == 0;
             assert this.dupHi == 0;
-        } else if (this.odd()) {                // odd count
+        } else if (this.odd()) {                       // odd count
             final double midValue = this.lo;
             final double midIndex = this.indexLo();
             if (value <= midValue) {
@@ -200,30 +203,68 @@ public class MedianState {
         return (this.count & 1) != 0;
     }
 
+    /**
+     * Get the index of the last value in the first half of values.
+     *
+     * @return index of "lo"
+     * @throws IllegalStateException if there is no data
+     */
     public long indexLo() {
         if (this.count == 0)
             throw new IllegalStateException("no data");
         return (this.count + 1) / 2 - 1;
     }
 
+    /**
+     * Get the index of the first value in the second half of values.
+     *
+     * @return index of "hi"
+     * @throws IllegalStateException if there is no data
+     */
     public long indexHi() {
         if (this.count == 0)
             throw new IllegalStateException("no data");
         return (this.count / 2 - 1) + 1;
     }
 
+    /**
+     * Get the last value in the first half of values.
+     *
+     * @return index of "lo"
+     * @throws IllegalStateException if there is no data
+     */
     public double lo() {
+        if (this.count == 0)
+            throw new IllegalStateException("no data");
         return this.lo;
     }
 
+    /**
+     * Get the first value in the second half of values.
+     *
+     * @return index of "hi"
+     * @throws IllegalStateException if there is no data
+     */
     public double hi() {
+        if (this.count == 0)
+            throw new IllegalStateException("no data");
         return this.hi;
     }
 
+    /**
+     * Get the number of duplicates of "lo" in the first half of values.
+     *
+     * @return number of duplicates of "lo", or zero if there is no data
+     */
     public long dupLo() {
         return this.dupLo;
     }
 
+    /**
+     * Get the number of duplicates of "hi" in the second half of values.
+     *
+     * @return number of duplicates of "hi", or zero if there is no data
+     */
     public long dupHi() {
         return this.dupHi;
     }
