@@ -34,6 +34,10 @@ public class MedianState {
     /**
      * Construct an empty instance.
      *
+     * <p>
+     * The given functions must accept finite values, {@link Double#POSITIVE_INFINITY}, and {@link Double#NEGATIVE_INFINITY}.
+     * The returned {@link DoubleStream}s must contain only finite values.
+     *
      * @param downwardIterator iterates values strictly lower than the value given in descending order
      * @param upwardIterator iterates values strictly greater than the value given in asccending order
      * @throws IllegalArgumentException if either parameter is null
@@ -222,6 +226,55 @@ public class MedianState {
 
     public long dupHi() {
         return this.dupHi;
+    }
+
+    /**
+     * Confirm that our notion of the median agrees with what's actually in the data set.
+     *
+     * <p>
+     * Note: This performs an O(n) iteration of the entire data set.
+     *
+     * @throws IllegalStateException if there is a discrepancy
+     */
+    public void verify() {
+
+        // First, determine whether Double.MIN_VALUE is in the data set. We have to do
+        // this separately because the upwardIterator only iterates strictly greater values.
+        final boolean hasMinValue;
+        try (DoubleStream stream = this.downwardIterator.apply(Double.MIN_VALUE + Double.MIN_VALUE)) {
+            hasMinValue = stream.findAny().isPresent();
+        }
+
+        // We will watch for "lo" and "hi" as we scan past them
+        final long actualIndexLo = (this.count + 1) / 2 - 1;
+        final long actualIndexHi = (this.count / 2 - 1) + 1;
+        double actualLo = 0.0;
+        double actualHi = 0.0;
+
+        // Scan through all the values
+        long index = 0;
+        try (DoubleStream stream = this.upwardIterator.apply(Double.NEGATIVE_INFINITY)) {
+            for (Iterator<Double> i = stream.iterator(); i.hasNext(); ) {
+                final double value = i.next();
+                if (index == this.count)
+                    throw new IllegalStateException("there are more than " + this.count + " values");
+                assert Double.isFinite(value);
+                if (index == actualIndexLo)
+                    actualLo = value;
+                if (index == actualIndexHi)
+                    actualHi = value;
+                index++;
+            }
+        }
+        if (index != this.count)
+            throw new IllegalStateException("there are only " + index + " < " + this.count + " values");
+
+        // Verify
+        if (index > 0) {
+            final double actualMedian = (actualLo + actualHi) / 2.0;
+            if (actualMedian != this.median())
+                throw new IllegalStateException("incorrect median " + this.median() + " != " + actualMedian);
+        }
     }
 
     private void recalculateLo(double value) {

@@ -25,26 +25,40 @@ public class MedianTest {
         // Iterators used by MedianState - this is its only view into the actual data
         final DoubleFunction<DoubleStream> downwardIterator = value -> {
             final int upperBound;
-            int index = Arrays.binarySearch(this.values, 0, this.size, value);
-            if (index >= 0) {
-                while (index > 0 && this.values[index - 1] == value)            // skip over values equal to "value"
-                    index--;
-                upperBound = index;
-            } else
-                upperBound = ~index;
+            if (value == Double.NEGATIVE_INFINITY)
+                return DoubleStream.empty();
+            if (value == Double.POSITIVE_INFINITY)
+                upperBound = this.size;
+            else {
+                if (!Double.isFinite(value))
+                    throw new IllegalArgumentException("invalid value");
+                int index = Arrays.binarySearch(this.values, 0, this.size, value);
+                if (index >= 0) {
+                    while (index > 0 && this.values[index - 1] == value)            // skip backwards over values equal to "value"
+                        index--;
+                    upperBound = index;
+                } else
+                    upperBound = ~index;
+            }
             return IntStream.range(0, upperBound)
               .map(i -> upperBound - i - 1)             // iterate in descending order
               .mapToDouble(i -> this.values[i]);
         };
         final DoubleFunction<DoubleStream> upwardIterator = value -> {
             final int lowerBound;
-            int index = Arrays.binarySearch(this.values, 0, this.size, value);
-            if (index >= 0) {
-                while (index < this.size - 1 && this.values[index] == value)    // skip over values equal to "value"
-                    index++;
-                lowerBound = index;
-            } else
-                lowerBound = ~index;
+            if (value == Double.POSITIVE_INFINITY)
+                return DoubleStream.empty();
+            if (value == Double.NEGATIVE_INFINITY)
+                lowerBound = 0;
+            else {
+                int index = Arrays.binarySearch(this.values, 0, this.size, value);
+                if (index >= 0) {
+                    while (index < this.size - 1 && this.values[index] == value)    // skip forward over values equal to "value"
+                        index++;
+                    lowerBound = index;
+                } else
+                    lowerBound = ~index;
+            }
             return IntStream.range(lowerBound, this.size)
               .mapToDouble(i -> this.values[i]);
         };
@@ -79,6 +93,7 @@ public class MedianTest {
                   .filter(i -> this.values[i] == state.hi())
                   .count();
             }
+            state.verify();
 
             // Mutate state
             while (true) {
