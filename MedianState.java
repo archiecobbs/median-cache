@@ -165,7 +165,7 @@ public class MedianState {
             this.hi = 0.0;
             assert this.dupLo == 0;
             assert this.dupHi == 0;
-        } else if (this.odd()) {                       // odd count
+        } else if (this.odd()) {                // odd count
             final double midValue = this.lo;
             final double midIndex = this.indexLo();
             if (value <= midValue) {
@@ -212,7 +212,7 @@ public class MedianState {
     public long indexLo() {
         if (this.count == 0)
             throw new IllegalStateException("no data");
-        return (this.count + 1) / 2 - 1;
+        return (this.count - 1) / 2;
     }
 
     /**
@@ -224,7 +224,7 @@ public class MedianState {
     public long indexHi() {
         if (this.count == 0)
             throw new IllegalStateException("no data");
-        return (this.count / 2 - 1) + 1;
+        return this.count / 2;
     }
 
     /**
@@ -287,8 +287,8 @@ public class MedianState {
         }
 
         // We will watch for "lo" and "hi" as we scan past them
-        final long actualIndexLo = (this.count + 1) / 2 - 1;
-        final long actualIndexHi = (this.count / 2 - 1) + 1;
+        final long actualIndexLo = (this.count - 1) / 2;
+        final long actualIndexHi = this.count / 2;
         double actualLo = 0.0;
         double actualHi = 0.0;
 
